@@ -1,8 +1,10 @@
 # Spring boot backend
+
 Spring Boot RESTful server
 
 # Initial setup
 
+Spring Boot 2.6.1 \
 Java : 8 \
 Open JDK : 10.0.1 \
 Packaging: JAR
@@ -17,4 +19,11 @@ Spring Data JPA \
 H2 Database \
 PostgreSQL Driver \
 Validation \
-Spring REST Docs \
+Spring REST Docs 
+
+# Database
+
+Link: [Postgresql Docker](https://hub.docker.com/_/postgres)
+
+Run image command: \
+docker run --name postgres -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
