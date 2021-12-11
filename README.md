@@ -5,7 +5,7 @@ Spring Boot RESTful server
 
 Java : 8 \
 Open JDK : 10.0.1 \
-Packaging: JAR \
+Packaging: JAR
 
 # Dependencies
 
