@@ -98,14 +98,16 @@ public class AuthUserService implements ICrudService<AuthUser>{
     }
 
     private String getBearerToken(String subject) {
+
         String secretKey = "mySecretKey";
         List<GrantedAuthority> grantedAuthorities = AuthorityUtils
                 .commaSeparatedStringToAuthorityList("ROLE_USER");
 
-        Utils.writeLog("MILISECONDS--------------------------------");
+        Long tokenExpiration = 600000L;
 
+        Utils.writeLog("MILISECONDS--------------------------------");
         Date d1 = new Date(System.currentTimeMillis());
-        Date d2 = new Date(System.currentTimeMillis()+600000);
+        Date d2 = new Date(System.currentTimeMillis()+tokenExpiration);
         Utils.writeLog(d1.toString());
         Utils.writeLog(d2.toString());
 
@@ -118,7 +120,7 @@ public class AuthUserService implements ICrudService<AuthUser>{
                                 .map(GrantedAuthority::getAuthority)
                                 .collect(Collectors.toList()))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 600000) )
+                .setExpiration(new Date(System.currentTimeMillis() + tokenExpiration) )
                 .signWith(SignatureAlgorithm.HS512,
                         secretKey.getBytes()).compact();
 
