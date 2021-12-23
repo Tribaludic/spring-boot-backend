@@ -1,7 +1,6 @@
 package com.tribaludic.backend.model;
 
 import com.tribaludic.backend.Utils.Utils;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.GenericGenerator;
 
 import javax.persistence.*;

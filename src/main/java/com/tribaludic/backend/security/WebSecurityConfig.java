@@ -1,5 +1,6 @@
 package com.tribaludic.backend.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,6 +22,9 @@ import javax.servlet.http.HttpServletResponse;
 @Configuration
 class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+    @Autowired
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
 
@@ -29,8 +33,11 @@ class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.POST, "/tribaludic/v1/auth/signup").permitAll()
                 .antMatchers(HttpMethod.POST, "/tribaludic/v1/auth/login").permitAll()
-                .anyRequest().authenticated();
-
+                .anyRequest().authenticated().and().
+                // make sure we use stateless session; session won't be used to
+                // store user's state.
+                        exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint).and().sessionManagement()
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);;
     }
 
     // Used by spring security if CORS is enabled.
