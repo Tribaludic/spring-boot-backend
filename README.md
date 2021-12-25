@@ -4,9 +4,9 @@ Spring Boot RESTful server
 
 # Initial setup
 
-Spring Boot 2.6.1 \
+Spring Boot 2.6.2 \
 Java : 8 \
-Open JDK : 10.0.1 \
+Open JDK : 17.0.1 \
 Packaging: JAR
 
 # Dependencies
@@ -19,7 +19,7 @@ Spring Data JPA \
 H2 Database \
 PostgreSQL Driver \
 Validation \
-Spring REST Docs 
+Spring REST Docs
 
 # Database
 

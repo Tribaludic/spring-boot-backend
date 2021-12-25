@@ -1,73 +1,91 @@
 package com.tribaludic.backend.controller;
 
-import com.tribaludic.backend.exception.ExceptionResponse;
+import com.tribaludic.backend.Utils.ControllerRequestMapping;
 import com.tribaludic.backend.model.AuthUser;
-import com.tribaludic.backend.model.LoginRequestData;
-import com.tribaludic.backend.model.SignupResponse;
-import com.tribaludic.backend.model.TestModel;
+import com.tribaludic.backend.response.data.*;
 import com.tribaludic.backend.service.AuthUserService;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+
 import javax.validation.Valid;
-import java.io.Serializable;
+import java.security.Key;
 import java.util.*;
+
+import static com.tribaludic.backend.security.SecurityConstants.*;
 
 /**
  * @author Andres Bustamante
  */
 @RestController
-@RequestMapping("/tribaludic/v1/")
-public class AuthController{
-
-    Logger logger = LoggerFactory.getLogger(AuthController.class);
+@RequestMapping(ControllerRequestMapping.AUTH_CONTROLLER)
+public class AuthController {
 
     @Autowired
-    private AuthUserService authUserService;
+    AuthUserService authUserService;
 
-    @GetMapping("test")
-    ResponseEntity<TestModel> test( @RequestBody AuthUser user){
-
-        return new ResponseEntity<>(new TestModel("hola from server"), HttpStatus.OK);
+    @PostMapping("auth_hello")
+    public String authHello(){
+        return  "Hello from auth service";
     }
 
-    @PostMapping(value = "auth/signup", produces = {"application/json"})
-    ResponseEntity<?> signup(@Valid @RequestBody AuthUser user ){
-
-        //Utils.writeLog("original password = "+user.getPassword());
-        //Utils.writeLog("encrypted password = "+ Utils.bCryptPasswordEncoder().encode(user.getPassword()));
+    @PostMapping(value = "signup")
+    public ResponseEntity<?> signup(@RequestBody @Valid AuthUser user){
 
         if(authUserService.isEmailAlreadyInUse(user.getEmail())){
             Map<String,String> details = new HashMap<>();
-            details.put("email", user.getEmail().toLowerCase());
-            return new ResponseEntity<>(new ExceptionResponse("Email already registered",details),HttpStatus.FOUND);
+            details.put("email", "The email is already registered");
+            return new ResponseEntity<>(
+                    new ExceptionResponse(details),HttpStatus.FOUND);
+        }else{
+            AuthUser createdUser = authUserService.create(user);
+            Map<String,Object> details = new HashMap<>();
+            details.put("user_id", createdUser.getId());
+            details.put("user_email", createdUser.getEmail());
+            details.put("user_created", createdUser.getCreated());
+            details.put("user_email_verified", createdUser.getEmailVerified());
+            return new ResponseEntity<>(new SuccessResponse(details),HttpStatus.CREATED);
         }
-        AuthUser createdUser = authUserService.create(user);
 
-        return new ResponseEntity<>(new SignupResponse(createdUser.getId().toString(), createdUser.getEmail(), createdUser.getCreated(), createdUser.getAuthToken()) ,HttpStatus.CREATED);
     }
 
-    @PostMapping(value = "auth/login", produces = {"application/json"})
-    ResponseEntity<?> login(@Valid @RequestBody LoginRequestData user ){
+    @PostMapping(value = "login")
+    public ResponseEntity<?> login(@RequestBody @Valid AuthUser user){
 
-        Optional<AuthUser> authUser = authUserService.logInWithEmailAndPassword(user.getEmail(),user.getPassword());
+        Optional<AuthUser> optionalAuthUser = authUserService.loginWithEmailAndPassword(user.getEmail(),user.getPassword());
 
+        if(optionalAuthUser.isPresent()){
+            user = optionalAuthUser.get();
+            Map<String,Object> details = new HashMap<>();
+            details.put("user_id", user.getId());
+            details.put("user_email", user.getEmail());
+            details.put("user_created", user.getCreated());
+            details.put("last_login", user.getLastLogin());
+            details.put("user_email_verified", user.getEmailVerified());
+            details.put("access_token", generateJwtToken(user.getEmail()));
 
-        logger.info("AN USER IS TRYING TTO LOGIN");
-        logger.info(user.getEmail());
-
-        if(authUser.isPresent()){
-            logger.info("LOGIN SUCCESSFUL");
-            return new ResponseEntity<>(authUser,HttpStatus.OK);
+            return new ResponseEntity<>(new SuccessResponse(details), HttpStatus.OK);
+        }else{
+            Map<String,String> details = new HashMap<>();
+            details.put("credentials", "Invalid credentials");
+            return new ResponseEntity<>(new ExceptionResponse(details), HttpStatus.NOT_FOUND);
         }
-        Map<String,String> details = new HashMap<>();
-        details.put("errorType", "there is no user with these credentials");
-        logger.info("LOGIN FAILED");
-        return new ResponseEntity<>(new ExceptionResponse("Log in failed",details),HttpStatus.BAD_REQUEST);
+    }
+
+    String generateJwtToken(String email){
+        Date exp = new Date(System.currentTimeMillis() + EXPIRATION_TIME);
+        Key key = Keys.hmacShaKeyFor(KEY.getBytes());
+        Claims claims = Jwts.claims().setSubject(email);
+        String token = Jwts.builder().setClaims(claims).setIssuer(JWT_ISSUER).signWith(key).setExpiration(exp).compact();
+        return token;
     }
 
 }

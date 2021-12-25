@@ -1,5 +1,5 @@
-package com.tribaludic.backend.exception;
-
+package com.tribaludic.backend.response.handler;
+import com.tribaludic.backend.response.data.ExceptionResponse;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +11,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
 /**
  * @author Andres Bustamante
  */
@@ -22,31 +20,31 @@ import java.util.Map;
 @RestController
 public class ResponseExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private final String defaultErrorMessage="An error occurred";
+    private final String status ="error";
 
     @ExceptionHandler(Exception.class)
     public final ResponseEntity<ExceptionResponse> handleAllExceptions(Exception ex){
-
+        Map<String, String> details = new HashMap<>();
+        details.put("exception",ex.getMessage());
         ExceptionResponse exceptionResponse = new ExceptionResponse(
-                defaultErrorMessage
+                details
         );
 
-        return new ResponseEntity<>(exceptionResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+        return new ResponseEntity<>(exceptionResponse, HttpStatus.BAD_REQUEST);
     }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatus status, WebRequest request) {
 
-        Map<String, String> errors = new HashMap<>();
+        Map<String, String> details = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError)error).getField();
             String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName,errorMessage);
+            details.put(fieldName,errorMessage);
         });
 
         ExceptionResponse exceptionResponse = new ExceptionResponse(
-                defaultErrorMessage,
-                errors
+                details
         );
 
         return new ResponseEntity<>(exceptionResponse,HttpStatus.BAD_REQUEST);
